@@ -1,8 +1,7 @@
-streamlit>=1.25.0
-pandas>=2.1.0
-numpy>=1.25.0
-python-dateutil>=2.8.2
-pytz>=2023.3
-requests>=2.31.0
-fpdf>=2.7.1
-sqlite3 
+streamlit
+pandas
+numpy
+python-dateutil
+pytz
+requests
+fpdf
