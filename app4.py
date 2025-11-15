@@ -6,6 +6,7 @@ from datetime import date
 from fpdf import FPDF
 import io
 import requests
+import base64
 
 # =====================================================
 # DATABASE CONNECTION
@@ -92,23 +93,41 @@ def order_view_all_data():
 # GEMINI INFERENCE FUNCTION
 # =====================================================
 def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
-    url = "https://api.deepmind.com/v1/engines/gemini-2.5pro/completions"
-    headers = {"Authorization": f"Bearer {api_key}"}
-    data = {
-        "prompt": f"RX content:\n{rx_text}\n\nInstructions:\n{instructions}",
-        "max_output_tokens": 500
+    """
+    Call Google Gemini 2.5 Pro API to get inference on RX.
+    """
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
+    headers = {
+        "x-goog-api-key": api_key,
+        "Content-Type": "application/json"
     }
-    files = None
+
+    contents = [
+        {"parts": [{"text": f"RX Content:\n{rx_text}"}]},
+        {"parts": [{"text": f"Instructions:\n{instructions}"}]}
+    ]
+
     if image_file:
-        files = {"file": image_file.getvalue()}
-    response = requests.post(url, headers=headers, data=data, files=files)
-    if response.status_code == 200:
-        return response.json().get("completion", "")
-    else:
-        return f"AI Inference failed: {response.text}"
+        img_bytes = image_file.read()
+        img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+        contents.append({
+            "parts": [
+                {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}
+            ]
+        })
+
+    payload = {"contents": contents}
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        return f"AI Inference failed: {str(e)}"
 
 # =====================================================
-# CUSTOMER DASHBOARD (POS SYSTEM + RX Pro)
+# CUSTOMER DASHBOARD (POS SYSTEM + RX PRO)
 # =====================================================
 def customer_dashboard(username):
     st.sidebar.success(f"Logged in as: {username}")
@@ -203,10 +222,9 @@ def customer_dashboard(username):
         else:
             st.info("Add products above to start your order.")
 
-    # ----------------- RX PRO AI INFERENCE -----------------
+    # ----------------- RX AI INFERENCE -----------------
     with tab3:
         st.subheader("🤖 RX AI Inference (Gemini 2.5 Pro)")
-
         API_KEY = "AIzaSyBYKDVKNfL6lEtuu0E9nsH8sXt7tWVfQOg"  # replace with your key
 
         use_latest_order = st.checkbox("Use latest POS order as RX")
@@ -223,12 +241,9 @@ def customer_dashboard(username):
         )
 
         rx_text = ""
-        if use_latest_order:
-            if order_view_data(username):
-                last_order = order_view_data(username)[-1]
-                rx_text = f"Customer: {username}\nItems: {last_order[1]}\nQuantities: {last_order[2]}"
-            else:
-                st.warning("No orders found to use as RX.")
+        if use_latest_order and order_view_data(username):
+            last_order = order_view_data(username)[-1]
+            rx_text = f"Customer: {username}\nItems: {last_order[1]}\nQuantities: {last_order[2]}"
         elif uploaded_file:
             rx_text = uploaded_file.read().decode("utf-8")
 
@@ -243,40 +258,20 @@ def customer_dashboard(username):
                 st.subheader("Inference Result")
                 st.text_area("AI Output", inference_result, height=200)
 
-                # Generate PDF combining POS + AI
+                # Generate PDF properly
                 pdf = FPDF()
                 pdf.add_page()
-                pdf.set_font("Arial", "B", 16)
+                pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "KAMPS Royal Pharmacy - RX Pro Receipt", ln=True, align="C")
                 pdf.ln(5)
-
-                pdf.set_font("Arial", "B", 12)
-                pdf.cell(0, 8, f"Customer: {username}", ln=True)
-                pdf.cell(0, 8, f"Date: {date.today()}", ln=True)
-                pdf.ln(5)
-
-                pdf.set_font("Arial", "B", 14)
-                pdf.set_text_color(0, 0, 0)
-                pdf.cell(0, 8, "POS Transaction Summary:", ln=True)
                 pdf.set_font("Arial", "", 12)
+                pdf.multi_cell(0, 7, f"Customer: {username}\nDate: {date.today()}\n\n")
+                pdf.multi_cell(0, 7, f"RX Content:\n{rx_text}\n\n")
+                pdf.multi_cell(0, 7, f"Inference Instructions:\n{instructions_text}\n\n")
+                pdf.multi_cell(0, 7, f"AI Inference Result:\n{inference_result}\n\n")
+
                 if use_latest_order:
-                    pdf.multi_cell(0, 7, f"Items: {last_order[1]}\nQuantities: {last_order[2]}\nOrder ID: {last_order[3]}")
-                else:
-                    pdf.multi_cell(0, 7, "No POS order included.")
-
-                pdf.ln(5)
-                pdf.set_font("Arial", "B", 14)
-                pdf.set_text_color(255, 0, 0)
-                pdf.cell(0, 8, "AI Inference Result / Alerts:", ln=True)
-                pdf.set_font("Arial", "", 12)
-                pdf.set_text_color(0, 0, 0)
-                pdf.multi_cell(0, 7, inference_result)
-
-                pdf.ln(5)
-                pdf.set_font("Arial", "B", 14)
-                pdf.cell(0, 8, "Pharmacist Counseling Notes:", ln=True)
-                pdf.set_font("Arial", "", 12)
-                pdf.multi_cell(0, 7, instructions_text)
+                    pdf.multi_cell(0, 7, f"POS Transaction Summary:\nItems: {last_order[1]}\nQuantities: {last_order[2]}\nOrder ID: {last_order[3]}\n")
 
                 pdf_bytes = pdf.output(dest='S').encode('latin1')
 
@@ -360,7 +355,6 @@ def main():
     menu = ["Login", "Sign Up", "Logout"]
     choice = st.sidebar.selectbox("Menu", menu)
 
-    # Logged-in Handling
     if st.session_state.user_role == "customer" and choice != "Logout":
         customer_dashboard(st.session_state.username)
         return
@@ -368,7 +362,6 @@ def main():
         admin_dashboard()
         return
 
-    # LOGIN
     if choice == "Login":
         login_type = st.sidebar.radio("Login as:", ["Customer", "Admin"])
         username = st.sidebar.text_input("Username")
@@ -389,7 +382,6 @@ def main():
                 else:
                     st.error("Invalid admin credentials")
 
-    # SIGNUP
     elif choice == "Sign Up":
         st.subheader("Create a New Customer Account")
         Cname = st.text_input("Full Name")
@@ -406,7 +398,6 @@ def main():
             else:
                 st.warning("Passwords do not match!")
 
-    # LOGOUT
     elif choice == "Logout":
         st.session_state.user_role = None
         st.session_state.username = ""
