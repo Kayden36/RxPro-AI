@@ -93,9 +93,6 @@ def order_view_all_data():
 # GEMINI INFERENCE FUNCTION
 # =====================================================
 def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
-    """
-    Call Google Gemini 2.5 Pro API to get inference on RX.
-    """
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
     headers = {
         "x-goog-api-key": api_key,
@@ -225,7 +222,7 @@ def customer_dashboard(username):
     # ----------------- RX AI INFERENCE -----------------
     with tab3:
         st.subheader("🤖 RX AI Inference (Gemini 2.5 Pro)")
-        API_KEY = "AIzaSyBYKDVKNfL6lEtuu0E9nsH8sXt7tWVfQOg"  # replace with your key
+        API_KEY = "YOUR_GEMINI_API_KEY"  # replace with your key
 
         use_latest_order = st.checkbox("Use latest POS order as RX")
         uploaded_file = st.file_uploader("Or upload RX file (.txt)", type=["txt"])
@@ -258,7 +255,7 @@ def customer_dashboard(username):
                 st.subheader("Inference Result")
                 st.text_area("AI Output", inference_result, height=200)
 
-                # Generate PDF properly
+                # ---------------- FIXED PDF GENERATION ----------------
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", "B", 14)
@@ -273,7 +270,10 @@ def customer_dashboard(username):
                 if use_latest_order:
                     pdf.multi_cell(0, 7, f"POS Transaction Summary:\nItems: {last_order[1]}\nQuantities: {last_order[2]}\nOrder ID: {last_order[3]}\n")
 
-                pdf_bytes = pdf.output(dest='S').encode('latin1')
+                # Fixed PDF bytes output
+                pdf_buffer = io.BytesIO()
+                pdf.output(pdf_buffer)
+                pdf_bytes = pdf_buffer.getvalue()
 
                 st.download_button(
                     label="📄 Download RX Pro PDF Receipt",
