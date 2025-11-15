@@ -228,7 +228,7 @@ def customer_dashboard(username):
                 st.warning("Please provide RX content or select POS order.")
             else:
                 try:
-                    api_key = "YOUR_GEMINI_KEY"  # replace inline
+                    api_key = "AIzaSyBYKDVKNfL6lEtuu0E9nsH8sXt7tWVfQOg"  # replace inline
                     inference_result = run_gemini_inference(rx_text, instructions, api_key)
                     st.success("✅ Inference Completed")
                     st.code(inference_result)
