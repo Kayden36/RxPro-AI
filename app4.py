@@ -3,8 +3,6 @@ import pandas as pd
 import sqlite3
 import random
 from datetime import date
-from fpdf import FPDF
-import io
 import requests
 import base64
 
@@ -93,6 +91,9 @@ def order_view_all_data():
 # GEMINI INFERENCE FUNCTION
 # =====================================================
 def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
+    """
+    Call Google Gemini 2.5 Pro API to get inference on RX.
+    """
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
     headers = {
         "x-goog-api-key": api_key,
@@ -219,7 +220,7 @@ def customer_dashboard(username):
         else:
             st.info("Add products above to start your order.")
 
-    # ----------------- RX AI INFERENCE -----------------
+    # ----------------- RX AI INFERENCE (Fixed) -----------------
     with tab3:
         st.subheader("🤖 RX AI Inference (Gemini 2.5 Pro)")
         API_KEY = "AIzaSyBYKDVKNfL6lEtuu0E9nsH8sXt7tWVfQOg"  # replace with your key
@@ -249,38 +250,25 @@ def customer_dashboard(username):
 
             if st.button("Run AI Inference"):
                 instructions_text = "\n".join(instructions) if instructions else "No specific instructions."
-                image_file = uploaded_file if uploaded_file else None
-                inference_result = run_gemini_inference(rx_text, instructions_text, API_KEY, image_file)
+                inference_result = run_gemini_inference(rx_text, instructions_text, API_KEY)
 
                 st.subheader("Inference Result")
-                st.text_area("AI Output", inference_result, height=200)
-
-                # ---------------- FIXED PDF GENERATION ----------------
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial", "B", 14)
-                pdf.cell(0, 10, "KAMPS Royal Pharmacy - RX Pro Receipt", ln=True, align="C")
-                pdf.ln(5)
-                pdf.set_font("Arial", "", 12)
-                pdf.multi_cell(0, 7, f"Customer: {username}\nDate: {date.today()}\n\n")
-                pdf.multi_cell(0, 7, f"RX Content:\n{rx_text}\n\n")
-                pdf.multi_cell(0, 7, f"Inference Instructions:\n{instructions_text}\n\n")
-                pdf.multi_cell(0, 7, f"AI Inference Result:\n{inference_result}\n\n")
-
-                if use_latest_order:
-                    pdf.multi_cell(0, 7, f"POS Transaction Summary:\nItems: {last_order[1]}\nQuantities: {last_order[2]}\nOrder ID: {last_order[3]}\n")
-
-                # Fixed PDF bytes output
-                pdf_buffer = io.BytesIO()
-                pdf.output(pdf_buffer)
-                pdf_bytes = pdf_buffer.getvalue()
-
-                st.download_button(
-                    label="📄 Download RX Pro PDF Receipt",
-                    data=pdf_bytes,
-                    file_name=f"{username}_rxpro_receipt.pdf",
-                    mime="application/pdf"
-                )
+                # Render as HTML so user can print to PDF in browser
+                html_content = f"""
+                <div style="font-family:Arial, sans-serif; padding:15px; border:1px solid #ccc; border-radius:8px; background-color:#f9f9f9;">
+                    <h2>💊 RX Pro Inference</h2>
+                    <p><strong>Customer:</strong> {username}</p>
+                    <p><strong>Date:</strong> {date.today()}</p>
+                    <h3>RX Content:</h3>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">{rx_text}</pre>
+                    <h3>Instructions:</h3>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">{instructions_text}</pre>
+                    <h3>AI Inference Result:</h3>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">{inference_result}</pre>
+                </div>
+                """
+                st.markdown(html_content, unsafe_allow_html=True)
+                st.info("Use your browser's Print function (Ctrl+P or Cmd+P) to save as PDF.")
         else:
             st.info("Select latest POS order or upload a RX file to run inference.")
 
