@@ -223,7 +223,7 @@ def customer_dashboard(username):
     # ----------------- RX AI INFERENCE (Fixed) -----------------
     with tab3:
         st.subheader("🤖 RX AI Inference (Gemini 2.5 Pro)")
-        API_KEY = "AIzaSyBYKDVKNfL6lEtuu0E9nsH8sXt7tWVfQOg"  # replace with your key
+        API_KEY = st.secrets["GEMINI_API_KEY"]  # replace with your key
 
         use_latest_order = st.checkbox("Use latest POS order as RX")
         uploaded_file = st.file_uploader("Or upload RX file (.txt)", type=["txt"])
