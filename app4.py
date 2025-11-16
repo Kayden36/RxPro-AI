@@ -129,9 +129,9 @@ def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
 # =====================================================
 def customer_dashboard(username):
     st.sidebar.success(f"Logged in as: {username}")
-    st.title("🏥 KAMPS Royal Pharmacy Dashboard")
+    st.title("🏥 RX-PRO AI Pharmacy Dashboard")
 
-    tab1, tab2, tab3 = st.tabs(["📜 Order History", "🛒 New Order (POS)", "🤖 RX AI Inference"])
+    tab1, tab2, tab3 = st.tabs(["📜 Order History", "🛒 New Order (POS)", "🤖 Complete Order"])
 
     # ----------------- ORDER HISTORY -----------------
     with tab1:
@@ -142,13 +142,13 @@ def customer_dashboard(username):
             df = pd.DataFrame(orders, columns=["Customer", "Items", "Quantities", "Order ID"])
             st.dataframe(df, use_container_width=True)
 
-            receipt_text = f"==== KAMPS Royal Pharmacy ====\nCustomer: {username}\n\n"
+            receipt_text = f"==== RxPro AI Pharmacy ====\nCustomer: {username}\n\n"
             for order in orders:
                 receipt_text += f"Order ID: {order[3]}\nItems: {order[1]}\nQuantities: {order[2]}\n{'-'*30}\n"
-            receipt_text += f"\nDate: {date.today()}\nThank you for shopping with us!\nVisit again 💚"
+            receipt_text += f"\nDate: {date.today()}\nThank you for choosing RXPro!\nReliable Patient Safety PoS 💚"
 
             st.download_button(
-                label="🧾 Download Receipt",
+                label="🧾 Download Sales Summary",
                 data=receipt_text.encode("utf-8"),
                 file_name=f"{username}_receipt.txt",
                 mime="text/plain"
