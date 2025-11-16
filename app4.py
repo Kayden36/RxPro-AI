@@ -222,7 +222,7 @@ def customer_dashboard(username):
 
     # ----------------- RX AI INFERENCE (Fixed) -----------------
     with tab3:
-        st.subheader("🤖 RX AI Inference (Gemini 2.5 Pro)")
+        st.subheader("🤖 RX Safety Check (Gemini 2.5 Pro)")
         API_KEY = st.secrets["GEMINI_API_KEY"]  # replace with your key
 
         use_latest_order = st.checkbox("Use latest POS order as RX")
@@ -232,9 +232,9 @@ def customer_dashboard(username):
             options=[
                 "Check dosage",
                 "Check drug interactions",
-                "Check allergies",
-                "Provide counseling note",
-                "Verify prescription compliance"
+                "Map to common allergies",
+                "Recommend substitute drugs",
+                "Print as Standard PoS Receipt"
             ]
         )
 
