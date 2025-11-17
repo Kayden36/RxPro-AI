@@ -131,7 +131,7 @@ def customer_dashboard(username):
     st.sidebar.success(f"Logged in as: {username}")
     st.title("🏥 RX-PRO AI Pharmacy Dashboard")
 
-    tab1, tab2, tab3 = st.tabs(["📜 Order History", "🛒 New Order (POS)", "🤖 Complete Order"])
+    tab1, tab2, tab3 = st.tabs(["📜 Order History", "🛒 New Order (POS)", "🤖 Check RX Safety"])
 
     # ----------------- ORDER HISTORY -----------------
     with tab1:
@@ -215,8 +215,8 @@ def customer_dashboard(username):
 
                 st.session_state.cart.clear()
                 st.success("✅ Order placed successfully!")
-                st.info("You can download your receipt from the Order History tab.")
-                st.balloons()
+                st.info("Perform RX Safety Check to Complete Order.")
+               
         else:
             st.info("Add products above to start your order.")
 
