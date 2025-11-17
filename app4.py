@@ -277,7 +277,7 @@ def customer_dashboard(username):
 # =====================================================
 def admin_dashboard():
     st.sidebar.success("Logged in as: Admin")
-    st.title("👨‍⚕️ Admin Dashboard - KAMPS Royal Pharmacy")
+    st.title("👨‍⚕️ Admin Dashboard - RX-Pro AI Pharmacy")
 
     tab1, tab2, tab3 = st.tabs(["💊 Manage Drugs", "🧍 Customers", "📦 Orders"])
 
@@ -325,7 +325,7 @@ def admin_dashboard():
 # MAIN APP LOGIC
 # =====================================================
 def main():
-    st.set_page_config(page_title="KAMPS Royal Pharmacy", page_icon="💊", layout="wide")
+    st.set_page_config(page_title="RX-Pro AI Pharmacy", page_icon="💊", layout="wide")
 
     # Initialize tables
     cust_create_table()
