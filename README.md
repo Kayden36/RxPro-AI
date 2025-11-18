@@ -5,10 +5,10 @@
 
 **RXPro** is a **Streamlit-based MVP** that combines:
 
+- **AI-powered RX safety checks** using Google Gemini 2.5 Pro API  
 - A **Point-of-Sale (POS) system** for pharmacy orders  
 - **Inventory management**  
 - **Customer & admin dashboards**  
-- **AI-powered RX safety checks** using Google Gemini 2.5 Pro API  
 - **TXT-based receipts** with optional browser PDF printing  
 
 The system is designed to ensure **patient safety**, highlight **drug interactions**, and provide **counseling notes** while supporting standard POS operations.
