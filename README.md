@@ -15,12 +15,11 @@ The system is designed to ensure **patient safety**, highlight **drug interactio
 
 ## 💻 Features
 ### Customer Dashboard
-### Demo Login Test User credentials
 Please login using these credentials.
+Username: Cashier
+Password: 12345
 
- -Username: Cashier
- -Password: 12345
-
+ *Note: This account is for demo purposes only. Real pharmacy data requires proper signup.
 - View **order history**  
 - Create **new orders (POS)**  
 - Use **latest POS order as RX input** for AI inference  
