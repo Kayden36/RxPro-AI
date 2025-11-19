@@ -14,9 +14,11 @@
 The system is designed to ensure **patient safety**, highlight **drug interactions**, and provide **counseling notes** while supporting standard POS operations.
 
 ## 💻 Features
-
 ### Customer Dashboard
-
+## Demo Login Credentials
+Please login using these test credentials
+ ###username: Cashier
+ ###password: 12345
 - View **order history**  
 - Create **new orders (POS)**  
 - Use **latest POS order as RX input** for AI inference  
