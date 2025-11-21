@@ -256,7 +256,7 @@ def customer_dashboard(username):
         if rx_text or image_file:
             st.text_area("RX Content Preview", rx_text if rx_text else "(Image provided)", height=200)
             if st.button("Run AI Inference"):
-                instructions_text = "\n".join(instructions)
+                instructions_text = "\n".join(instructions + hidden instructions)
                 inference_result = run_gemini_inference(rx_text, instructions_text, API_KEY, image_file=image_file)
                 html_content = f"""
                 <div style="font-family:Arial, sans-serif; padding:15px; border:1px solid #ccc; border-radius:8px; background-color:#f9f9f9; color:black;">
