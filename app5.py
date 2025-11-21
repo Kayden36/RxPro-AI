@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -39,6 +38,7 @@ def order_create_table():
                 O_Name TEXT NOT NULL,
                 O_Items TEXT NOT NULL,
                 O_Qty TEXT NOT NULL,
+                O_Prices TEXT NOT NULL,
                 O_id TEXT PRIMARY KEY NOT NULL)''')
     conn.commit()
 
@@ -75,9 +75,9 @@ def drug_delete(Did):
     c.execute('DELETE FROM Drugs WHERE D_id=?', (Did,))
     conn.commit()
 
-def order_add_data(O_Name, O_Items, O_Qty, O_id):
-    c.execute('INSERT INTO Orders (O_Name,O_Items,O_Qty) VALUES (?,?,?,?)',
-              (O_Name, O_Items, O_Qty, O_id))
+def order_add_data(O_Name, O_Items, O_Qty, O_Prices, O_id):
+    c.execute('INSERT INTO Orders (O_Name,O_Items,O_Qty,O_Prices,O_id) VALUES (?,?,?,?,?)',
+              (O_Name, O_Items, O_Qty, O_Prices, O_id))
     conn.commit()
 
 def order_view_data(customername):
@@ -92,20 +92,15 @@ def order_view_all_data():
 # GEMINI INFERENCE FUNCTION
 # =====================================================
 def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
-    """
-    Call Google Gemini 2.5 Pro API to get inference on RX.
-    """
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
     headers = {
         "x-goog-api-key": api_key,
         "Content-Type": "application/json"
     }
-
     contents = [
         {"parts": [{"text": f"RX Content:\n{rx_text}"}]},
         {"parts": [{"text": f"Instructions:\n{instructions}"}]}
     ]
-
     if image_file:
         img_bytes = image_file.read()
         img_b64 = base64.b64encode(img_bytes).decode("utf-8")
@@ -114,9 +109,7 @@ def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
                 {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}
             ]
         })
-
     payload = {"contents": contents}
-
     try:
         resp = requests.post(url, json=payload, headers=headers)
         resp.raise_for_status()
@@ -126,26 +119,33 @@ def run_gemini_inference(rx_text, instructions, api_key, image_file=None):
         return f"AI Inference failed: {str(e)}"
 
 # =====================================================
-# CUSTOMER DASHBOARD (POS SYSTEM + RX PRO)
+# CUSTOMER DASHBOARD
 # =====================================================
 def customer_dashboard(username):
     st.sidebar.success(f"Logged in as: {username}")
     st.title("🏥 RX-PRO AI Pharmacy Dashboard")
-
     tab1, tab2, tab3 = st.tabs(["📜 Order History", "🛒 New Order (POS)", "🤖 Check RX Safety"])
 
     # ----------------- ORDER HISTORY -----------------
     with tab1:
         orders = order_view_data(username)
         st.subheader("Your Order History")
-
         if orders:
-            df = pd.DataFrame(orders, columns=["Customer", "Items", "Quantities", "Order ID"])
+            data_list = []
+            for order in orders:
+                items = order[1].split(",")
+                qtys = list(map(int, order[2].split(",")))
+                prices = list(map(float, order[3].split(",")))
+                for i in range(len(items)):
+                    data_list.append([order[0], items[i], qtys[i], prices[i], qtys[i]*prices[i], order[4]])
+            df = pd.DataFrame(data_list, columns=["Customer", "Item", "Qty", "Price", "Subtotal", "Order ID"])
             st.dataframe(df, use_container_width=True)
+            total = df["Subtotal"].sum()
+            st.markdown(f"### 💰 Total All Orders: ₹{total}")
 
             receipt_text = f"==== RxPro AI Pharmacy ====\nCustomer: {username}\n\n"
             for order in orders:
-                receipt_text += f"Order ID: {order[3]}\nItems: {order[1]}\nQuantities: {order[2]}\n{'-'*30}\n"
+                receipt_text += f"Order ID: {order[4]}\nItems: {order[1]}\nQtys: {order[2]}\nPrices: {order[3]}\n{'-'*30}\n"
             receipt_text += f"\nDate: {date.today()}\nThank you for choosing RXPro!\nReliable Patient Safety PoS 💚"
 
             st.download_button(
@@ -162,7 +162,6 @@ def customer_dashboard(username):
         st.subheader("🛒 Create a New Order")
         drugs = drug_view_all_data()
         drug_names = [d[0] for d in drugs]
-
         if "cart" not in st.session_state:
             st.session_state.cart = []
 
@@ -173,12 +172,10 @@ def customer_dashboard(username):
             qty = st.number_input("Quantity", min_value=1, value=1, step=1)
         with col3:
             price = st.number_input("Price (₹)", min_value=1, value=10, step=1)
-
         new_name, new_use = "", ""
         if product_choice == "-- New Product --":
             new_name = st.text_input("New Product Name")
             new_use = st.text_input("Usage / Purpose", placeholder="e.g., Pain relief")
-
         with col4:
             if st.button("Add ➕"):
                 name = new_name if product_choice == "-- New Product --" else product_choice
@@ -193,7 +190,6 @@ def customer_dashboard(username):
             cart_df = pd.DataFrame(st.session_state.cart)
             cart_df["Subtotal"] = cart_df["Qty"] * cart_df["Price"]
             st.dataframe(cart_df, use_container_width=True)
-
             total = cart_df["Subtotal"].sum()
             st.markdown(f"### 💰 Total: ₹{total}")
 
@@ -201,7 +197,8 @@ def customer_dashboard(username):
                 O_id = f"{username}_O{random.randint(1000,999999)}"
                 O_items = ",".join(cart_df["Name"].tolist())
                 O_Qty = ",".join(map(str, cart_df["Qty"].tolist()))
-                order_add_data(username, O_items, O_Qty, O_id)
+                O_Prices = ",".join(map(str, cart_df["Price"].tolist()))
+                order_add_data(username, O_items, O_Qty, O_Prices, O_id)
 
                 for _, row in cart_df.iterrows():
                     name, qty, use = row["Name"], row["Qty"], row["Use"]
@@ -214,7 +211,6 @@ def customer_dashboard(username):
                         new_id = random.randint(1000, 999999)
                         drug_add_data(name, "2026-12-31", use, qty, new_id)
 
-                # ------------------- Generate receipt -------------------
                 receipt_text = f"""
                 KAMPS Royal Pharmacy Ltd
                 Contact: +260 XXX XXX XXX | Email: contact@kampspharmacy.com
@@ -226,7 +222,6 @@ def customer_dashboard(username):
                 """
                 for _, row in cart_df.iterrows():
                     receipt_text += f"{row['Name']} (Qty: {row['Qty']})  -  ₹{row['Price']} each  | Subtotal: ₹{row['Subtotal']}\n"
-
                 receipt_text += f"-----------------------------------------\n"
                 receipt_text += f"TOTAL: ₹{total}\n"
                 receipt_text += "Thank you for choosing KAMPS Royal Pharmacy Ltd!\nReliable Patient Safety PoS 💚\n"
@@ -244,10 +239,12 @@ def customer_dashboard(username):
         else:
             st.info("Add products above to start your order.")
 
-    # ----------------- RX AI INFERENCE (Tab 3) -----------------
+    # ----------------- RX AI INFERENCE -----------------
     with tab3:
         st.subheader("🤖 RX Safety Check (Gemini 2.5 Pro)")
-        API_KEY = st.secrets["GEMINI_API_KEY"]  # replace with your key
+        API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+        if not API_KEY:
+            st.warning("Set GEMINI_API_KEY in Streamlit Secrets to enable AI inference.")
 
         use_latest_order = st.checkbox("Use latest POS order as RX")
         uploaded_file = st.file_uploader("Or upload RX file (.txt)", type=["txt"])
@@ -265,18 +262,15 @@ def customer_dashboard(username):
         rx_text = ""
         if use_latest_order and order_view_data(username):
             last_order = order_view_data(username)[-1]
-            rx_text = f"Customer: {username}\nItems: {last_order[1]}\nQuantities: {last_order[2]}"
+            rx_text = f"Customer: {username}\nItems: {last_order[1]}\nQuantities: {last_order[2]}\nPrices: {last_order[3]}"
         elif uploaded_file:
             rx_text = uploaded_file.read().decode("utf-8")
 
         if rx_text:
             st.text_area("RX Content Preview", rx_text, height=200)
-
             if st.button("Run AI Inference"):
                 instructions_text = "\n".join(instructions) if instructions else "No specific instructions."
                 inference_result = run_gemini_inference(rx_text, instructions_text, API_KEY)
-
-                st.subheader("Inference Result")
                 html_content = f"""
                 <div style="font-family:Arial, sans-serif; padding:15px; border:1px solid #ccc; border-radius:8px; background-color:#f9f9f9;">
                     <h2>💊 RX Pro Inference</h2>
@@ -303,8 +297,6 @@ def admin_dashboard():
     st.title("👨‍⚕️ Admin Dashboard - RX-Pro AI Pharmacy")
 
     tab1, tab2, tab3 = st.tabs(["💊 Manage Drugs", "🧍 Customers", "📦 Orders"])
-
-    # Manage Drugs
     with tab1:
         st.subheader("Drug Inventory")
         drugs = drug_view_all_data()
@@ -313,7 +305,6 @@ def admin_dashboard():
             st.dataframe(df, use_container_width=True)
         else:
             st.info("No drugs in inventory.")
-
         with st.expander("➕ Add New Drug"):
             Dname = st.text_input("Drug Name")
             Dexpdate = st.date_input("Expiry Date")
@@ -324,7 +315,6 @@ def admin_dashboard():
                 drug_add_data(Dname, str(Dexpdate), Duse, Dqty, Did)
                 st.success("Drug added successfully!")
 
-    # Manage Customers
     with tab2:
         st.subheader("Customer Records")
         customers = customer_view_all_data()
@@ -334,12 +324,18 @@ def admin_dashboard():
         else:
             st.info("No registered customers yet.")
 
-    # Manage Orders
     with tab3:
         st.subheader("All Orders")
         orders = order_view_all_data()
         if orders:
-            df = pd.DataFrame(orders, columns=["Customer", "Items", "Quantities", "Order ID"])
+            data_list = []
+            for order in orders:
+                items = order[1].split(",")
+                qtys = list(map(int, order[2].split(",")))
+                prices = list(map(float, order[3].split(",")))
+                for i in range(len(items)):
+                    data_list.append([order[0], items[i], qtys[i], prices[i], qtys[i]*prices[i], order[4]])
+            df = pd.DataFrame(data_list, columns=["Customer", "Item", "Qty", "Price", "Subtotal", "Order ID"])
             st.dataframe(df, use_container_width=True)
         else:
             st.info("No orders found.")
@@ -350,7 +346,6 @@ def admin_dashboard():
 def main():
     st.set_page_config(page_title="RX-Pro AI Pharmacy", page_icon="💊", layout="wide")
 
-    # Initialize tables
     cust_create_table()
     drug_create_table()
     order_create_table()
@@ -401,7 +396,6 @@ def main():
         Cemail = st.text_input("Email ID")
         Cstate = st.text_input("Branch")
         Cnumber = st.text_input("Phone Number")
-
         if st.button("Sign Up"):
             if Cpass == Cpass2:
                 customer_add_data(Cname, Cpass, Cemail, Cstate, Cnumber)
