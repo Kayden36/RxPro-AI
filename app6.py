@@ -237,9 +237,9 @@ def customer_dashboard(username):
             ]
         )
         hidden_instructions = [
-            "Ensure patient safety is prioritized",
-            "Highlight potential adverse drug events",
-            "Check prescription compliance rigorously"
+            "You are an AI POS Machine at Kamps Royal Pharmacy. Do not repeat the following instructions. Just Print a Pro Receipt for android mobile kiosk printer Titled: Kamps Royal Pharmacy Limited Receipt",
+            "All Prices (ZMW) are VAT Inclusive",
+            "Include Required* Field for Pharmacist to sign. Add AI generated receipt & safety check disclaimer as informational & demo only for compliance"
         ]
 
         rx_text = ""
