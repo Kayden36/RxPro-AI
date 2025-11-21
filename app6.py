@@ -330,7 +330,7 @@ def admin_dashboard():
 # MAIN APP
 # =====================================================
 def main():
-    st.set_page_config(page_title="RX-Pro AI Pharmacy", page_icon="💊", layout="wide")
+    st.set_page_config(page_title="Kamps Royal Pharmacy", page_icon="💊", layout="wide")
     cust_create_table()
     drug_create_table()
     order_create_table()
