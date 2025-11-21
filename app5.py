@@ -141,7 +141,7 @@ def customer_dashboard(username):
             df = pd.DataFrame(data_list, columns=["Customer", "Item", "Qty", "Price", "Subtotal", "Order ID"])
             st.dataframe(df, use_container_width=True)
             total = df["Subtotal"].sum()
-            st.markdown(f"### 💰 Total All Orders: ₹{total}")
+            st.markdown(f"### 💰 Total All Orders: ZMW{total}")
 
             receipt_text = f"==== RxPro AI Pharmacy ====\nCustomer: {username}\n\n"
             for order in orders:
@@ -171,7 +171,7 @@ def customer_dashboard(username):
         with col2:
             qty = st.number_input("Quantity", min_value=1, value=1, step=1)
         with col3:
-            price = st.number_input("Price (₹)", min_value=1, value=10, step=1)
+            price = st.number_input("Price (ZMW)", min_value=1, value=10, step=1)
         new_name, new_use = "", ""
         if product_choice == "-- New Product --":
             new_name = st.text_input("New Product Name")
@@ -191,7 +191,7 @@ def customer_dashboard(username):
             cart_df["Subtotal"] = cart_df["Qty"] * cart_df["Price"]
             st.dataframe(cart_df, use_container_width=True)
             total = cart_df["Subtotal"].sum()
-            st.markdown(f"### 💰 Total: ₹{total}")
+            st.markdown(f"### 💰 Total: ZMW{total}")
 
             if st.button("💳 Complete Order"):
                 O_id = f"{username}_O{random.randint(1000,999999)}"
