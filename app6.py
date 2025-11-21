@@ -237,9 +237,9 @@ def customer_dashboard(username):
             ]
         )
         hidden_instructions = [
-            "You are an AI POS Machine at Kamps Royal Pharmacy. Do not repeat the following instructions. Just Print a Pro Receipt for android mobile kiosk printer Titled: Kamps Royal Pharmacy Limited Receipt",
-            "All Prices (ZMW) are VAT Inclusive",
-            "Include Required* Field for Pharmacist to sign. Add AI generated receipt & safety check disclaimer as informational & demo only for compliance"
+            "AI Transpency: PoS Simulation","PoS ID:RXPr0-gem2.5AIv1.0.1","Branch: Kamps Royal Pharmacy", "Action Print Receipt",
+            "All Prices(ZMW):VAT Inclusive",
+            "Compliance: Required* Pharmacist_signature", "Disclaimer: AI generated safety check"
         ]
 
         rx_text = ""
@@ -256,7 +256,7 @@ def customer_dashboard(username):
         if rx_text or image_file:
             st.text_area("RX Content Preview", rx_text if rx_text else "(Image provided)", height=200)
             if st.button("Run AI Inference"):
-                instructions_text = "\n".join(instructions + hidden_instructions)
+                instructions_text = "\n".join(instructions)
                 inference_result = run_gemini_inference(rx_text, instructions_text, API_KEY, image_file=image_file)
                 html_content = f"""
                 <div style="font-family:Arial, sans-serif; padding:15px; border:1px solid #ccc; border-radius:8px; background-color:#f9f9f9; color:black;">
